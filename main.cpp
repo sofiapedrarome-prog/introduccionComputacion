@@ -17,21 +17,30 @@ int main()
 	// GLFW usando Core profile
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	// coordenadas de los vertices del triangulo (x,y,z(no hay))
+	// coordenadas de los del cuadrado (x,y,z(no hay))
 	GLfloat vertices[] = {
-	-0.5f, -0.5f, 0.0f, // 0 left
+	/*-0.5f, -0.5f, 0.0f, // 0 left
 	 0.5f, -0.5f, 0.0f, // 1 right
 	 0.0f,  0.5f, 0.0f, // 2 top
-
-	 0.0f, -0.5f, 0.0f, // 3 mid inferior
+	
+	0.0f, -0.5f, 0.0f, // 3 mid inferior
 	-0.25f, 0.0f, 0.0f, // 4 mid izquierdo
 	 0.25f, 0.0f, 0.0f  // 5 mid derecho
-	};
+	*/
+	-0.5f, -0.5f, 0.0f, // 0 abajo-izquierda
+	 0.5f, -0.5f, 0.0f, // 1 abajo-derecha
+	 0.5f,  0.5f, 0.0f, // 2 arriba-derecha
+	-0.5f,  0.5f, 0.0f  // 3 arriba-izquierda
 
+	};
 	GLuint indices[] = {
-		0, 4, 3, // triángulo abajo-izquierda
+
+	0, 1, 2, // primer triángulo (abajo-derecha)
+	0, 2, 3  // segundo triángulo (arriba-izquierda)
+
+	   /* 0, 4, 3, // triángulo abajo-izquierda
 		3, 1, 5, // triángulo abajo-derecha
-		4, 5, 2  // triángulo arriba
+		4, 5, 2  // triángulo arriba*/
 	};
 
 	// creamos el objeto 800 por 800 pxls con nomvbre "OpenGL Window"
@@ -107,7 +116,7 @@ int main()
 		//une el VAO al contexto de OpenGL
 		VAO1.Bind();
 		// dibuja el triangulo con los vertices totales e indices especificados
-		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glfwSwapBuffers(window);
 
 		glfwPollEvents();
