@@ -1,12 +1,12 @@
 #include <iostream>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "ShaderClass.h"
-#include"VAO.h"
-#include"VBO.h"
-#include"EBO.h"
-
+#include "VAO.h"
+#include "VBO.h"
+#include "EBO.h"
 
 int main()
 {
@@ -17,35 +17,45 @@ int main()
 	// GLFW usando Core profile
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	// coordenadas de los del cuadrado (x,y,z(no hay))
-	GLfloat vertices[] = {
-	/*-0.5f, -0.5f, 0.0f, // 0 left
-	 0.5f, -0.5f, 0.0f, // 1 right
-	 0.0f,  0.5f, 0.0f, // 2 top
-	
-	0.0f, -0.5f, 0.0f, // 3 mid inferior
-	-0.25f, 0.0f, 0.0f, // 4 mid izquierdo
-	 0.25f, 0.0f, 0.0f  // 5 mid derecho
-	*/
-	-0.5f, -0.5f, 0.0f, // 0 abajo-izquierda
-	 0.5f, -0.5f, 0.0f, // 1 abajo-derecha
-	 0.5f,  0.5f, 0.0f, // 2 arriba-derecha
-	-0.5f,  0.5f, 0.0f  // 3 arriba-izquierda
+	// generamos los vertices e indices de una rejilla de cuadrados de 0.1
+	std::vector<GLfloat> vertices;
+	std::vector<GLuint> indices;
 
-	};
-	GLuint indices[] = {
+	float squareSize = 0.1f;
+	float start = -1.0f;
+	int divisions = 20; // 20 cuadrados de 0.1 cubren de -1 a 1
 
-	0, 1, 2, // primer triángulo (abajo-derecha)
-	0, 2, 3  // segundo triángulo (arriba-izquierda)
+	GLuint indexCount = 0;
 
-	   /* 0, 4, 3, // triángulo abajo-izquierda
-		3, 1, 5, // triángulo abajo-derecha
-		4, 5, 2  // triángulo arriba*/
-	};
+	for (int row = 0; row < divisions; row++)
+	{
+		for (int col = 0; col < divisions; col++)
+		{
+			float x = start + col * squareSize;
+			float y = start + row * squareSize;
 
-	// creamos el objeto 800 por 800 pxls con nomvbre "OpenGL Window"
+			// 4 vertices de este cuadrado
+			vertices.push_back(x);               vertices.push_back(y);               vertices.push_back(0.0f); // abajo-izq
+			vertices.push_back(x + squareSize);  vertices.push_back(y);               vertices.push_back(0.0f); // abajo-der
+			vertices.push_back(x + squareSize);  vertices.push_back(y + squareSize);  vertices.push_back(0.0f); // arriba-der
+			vertices.push_back(x);               vertices.push_back(y + squareSize);  vertices.push_back(0.0f); // arriba-izq
+
+			// 2 triangulos de este cuadrado
+			indices.push_back(indexCount + 0);
+			indices.push_back(indexCount + 1);
+			indices.push_back(indexCount + 2);
+
+			indices.push_back(indexCount + 0);
+			indices.push_back(indexCount + 2);
+			indices.push_back(indexCount + 3);
+
+			indexCount += 4;
+		}
+	}
+
+	// creamos el objeto 800 por 800 pxls con nombre "OpenGL Window"
 	GLFWwindow* window = glfwCreateWindow(800, 800, "OpenGL Window", nullptr, nullptr);
-	// ve si ;la ventana se creo correctamente
+	// ve si la ventana se creo correctamente
 	if (!window)
 	{
 		std::cerr << "Failed to create GLFW window" << std::endl;
@@ -56,69 +66,38 @@ int main()
 	glfwMakeContextCurrent(window);
 	// carga todas las funciones de OpenGL con glad
 	gladLoadGL();
-	// especifica las demiensiones de la ventana de visualizacion x=0, y=0, ancho=800, alto=600
-	glViewport(0, 0, 800, 800);	
+	// especifica las dimensiones de la ventana de visualizacion x=0, y=0, ancho=800, alto=800
+	glViewport(0, 0, 800, 800);
 
 	Shader shaderProgram("default.vert", "default.frag");
+
 	VAO VAO1;
 	VAO1.Bind();
 
-	VBO VBO1(vertices, sizeof(vertices));
-	EBO EBO1(indices, sizeof(indices));
+	VBO VBO1(vertices.data(), (GLsizeiptr)(vertices.size() * sizeof(GLfloat)));
+	EBO EBO1(indices.data(), (GLsizeiptr)(indices.size() * sizeof(GLuint)));
+
 	VAO1.LinkVBO(VBO1, 0);
 	VAO1.Unbind();
 	VBO1.Unbind();
 	EBO1.Unbind();
 
-	// creamos el Vertex Array Object y el Vertex Buffer Object
-	GLuint VAO,VBO, EBO;
-	// generamos el VAO, VBO y EBO solo con un objeto de cada uno
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-	glBindVertexArray(VAO);
-	
-	//unimos el VBO al VAO y le pasamos los vertices del triangulo
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	//unimos el EBO al VAO y le pasamos los indices del triangulo
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-
-	// especificamos como OpenGL debe interpretar los vertices del triangulo
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	//vertice posicion 0
-	glEnableVertexAttribArray(0);
-
-	// desunimos el VBO, VAO y EBO  
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-
-	// color del fondo de la ventana (RGB + alpha)
-	glClearColor(0.7f, 0.3f, 0.5f, 1.0f);
-	// limpia el buffer de color y lo pinta con el color especificado en glClearColor
-	glClear(GL_COLOR_BUFFER_BIT);
-	// intercambia el buffer de color (dibuja en la ventana)
-	glfwSwapBuffers(window);
-
-	
 	while (!glfwWindowShouldClose(window))
 	{
+		// color del fondo de la ventana (RGB + alpha)
 		glClearColor(0.7f, 0.3f, 0.5f, 1.0f);
+		// limpia el buffer de color y lo pinta con el color especificado en glClearColor
 		glClear(GL_COLOR_BUFFER_BIT);
-		//dice que programa de shader usar 
-		shaderProgram.Activate();
-		//une el VAO al contexto de OpenGL
-		VAO1.Bind();
-		// dibuja el triangulo con los vertices totales e indices especificados
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glfwSwapBuffers(window);
 
+		// dice que programa de shader usar
+		shaderProgram.Activate();
+		// une el VAO al contexto de OpenGL
+		VAO1.Bind();
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // modo de dibujo en lineas
+		// dibuja la rejilla con los vertices totales e indices especificados
+		glDrawElements(GL_TRIANGLES, (GLsizei)indices.size(), GL_UNSIGNED_INT, 0);
+
+		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
