@@ -9,7 +9,6 @@
 
 int main()
 {
-
     // Inicializar GLFW
     glfwInit();
 
@@ -21,121 +20,86 @@ int main()
     // Ventana y sus parametros
     GLFWwindow* window = glfwCreateWindow(800, 800, "Mi primer ventana", NULL, NULL);
 
-
-    //check de error si la ventana falla
+    // check de error si la ventana falla
     if (window == NULL) {
-        std::cout << "Error a crear la ventana GLFW ";
-        std::cout << std::endl;
+        std::cout << "Error al crear la ventana GLFW" << std::endl;
         glfwTerminate();
         return -1;
     }
 
     glfwMakeContextCurrent(window);
 
-    gladLoadGL(); //Carga GLAD y configura OpenGl
-
-    glViewport(0, 0, 800, 800); //area de renderizado de la ventana x=0, y=0, a x=800, y=800 
-
-    // --- GENERACIÓN DINÁMICA DE LA GRILLA ---
-    const float STEP = 0.1f; // Medida mínima del cuadrado (0.1 en espacio NDC [-1, 1])
-    std::vector<GLfloat> gridVertices;
-
-    // OPCIÓN 1: LÍNEAS HORIZONTALES Y VERTICALES CONTINUAS
-    for (float pos = -1.0f; pos <= 1.0f + 0.0001f; pos += STEP)
-    {
-        // Línea Vertical (x constante, va de y=-1 a y=1)
-        gridVertices.push_back(pos);   gridVertices.push_back(-1.0f); gridVertices.push_back(0.0f);   gridVertices.push_back(0.4f); gridVertices.push_back(0.4f); gridVertices.push_back(0.4f);
-        gridVertices.push_back(pos);   gridVertices.push_back(1.0f);  gridVertices.push_back(0.0f);   gridVertices.push_back(0.4f); gridVertices.push_back(0.4f); gridVertices.push_back(0.4f);
-
-        // Línea Horizontal (y constante, va de x=-1 a x=1)
-        gridVertices.push_back(-1.0f); gridVertices.push_back(pos);   gridVertices.push_back(0.0f);   gridVertices.push_back(0.4f); gridVertices.push_back(0.4f); gridVertices.push_back(0.4f);
-        gridVertices.push_back(1.0f);  gridVertices.push_back(pos);   gridVertices.push_back(0.0f);   gridVertices.push_back(0.4f); gridVertices.push_back(0.4f); gridVertices.push_back(0.4f);
+    // Carga GLAD y configura OpenGL (con chequeo de error)
+    if (!gladLoadGL()) {
+        std::cout << "Error al inicializar GLAD" << std::endl;
+        glfwDestroyWindow(window);
+        glfwTerminate();
+        return -1;
     }
 
-    /*
-    // OPCIÓN 2: GENERACIÓN CUADRADO POR CUADRADO INDEPENDIENTE
-    for (float x = -1.0f; x < 1.0f - 0.0001f; x += STEP)
-    {
-        for (float y = -1.0f; y < 1.0f - 0.0001f; y += STEP)
+    glViewport(0, 0, 800, 800); // area de renderizado de la ventana x=0, y=0, a x=800, y=800
+
+    // --- GENERACIÓN DINÁMICA DE LA GRILLA (celdas rellenas hechas de 2 triángulos c/u) ---
+    const float STEP = 0.1f;   // Tamaño de cada celda, en espacio NDC [-1, 1]
+    const float MARGIN = 0.015f; // Espacio entre celdas para que se vea la separación de la grilla
+
+    // Cuántas celdas hay por lado
+    const int numCells = static_cast<int>((2.0f / STEP) + 0.5f);
+
+    std::vector<GLfloat> gridVertices; // posición (3) + color (3) por vértice
+
+    // Agrega un solo vértice (posición + color) al buffer
+    auto addVertex = [&](float x, float y, float r, float g, float b)
         {
-            float xNext = x + STEP;
-            float yNext = y + STEP;
-            float r = 0.4f, g = 0.4f, b = 0.4f;
+            gridVertices.push_back(x); gridVertices.push_back(y); gridVertices.push_back(0.0f);
+            gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
+        };
 
-            // Lado Inferior
-            gridVertices.push_back(x);     gridVertices.push_back(y);     gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-            gridVertices.push_back(xNext); gridVertices.push_back(y);     gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
+    // Agrega una celda (cuadrado) como 2 triángulos, dadas sus 4 esquinas en orden
+    auto addCell = [&](float x0, float y0, float x1, float y1, float r, float g, float b)
+        {
+            // Triángulo 1: inferior-izquierda, inferior-derecha, superior-izquierda
+            addVertex(x0, y0, r, g, b);
+            addVertex(x1, y0, r, g, b);
+            addVertex(x0, y1, r, g, b);
+            // Triángulo 2: inferior-derecha, superior-derecha, superior-izquierda
+            addVertex(x1, y0, r, g, b);
+            addVertex(x1, y1, r, g, b);
+            addVertex(x0, y1, r, g, b);
+        };
 
-            // Lado Derecho
-            gridVertices.push_back(xNext); gridVertices.push_back(y);     gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-            gridVertices.push_back(xNext); gridVertices.push_back(yNext); gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-
-            // Lado Superior
-            gridVertices.push_back(xNext); gridVertices.push_back(yNext); gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-            gridVertices.push_back(x);     gridVertices.push_back(yNext); gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-
-            // Lado Izquierdo
-            gridVertices.push_back(x);     gridVertices.push_back(yNext); gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
-            gridVertices.push_back(x);     gridVertices.push_back(y);     gridVertices.push_back(0.0f); gridVertices.push_back(r); gridVertices.push_back(g); gridVertices.push_back(b);
+    // Genera cada celda de la grilla, encogida por MARGIN para que se note la separación
+    for (int j = 0; j < numCells; j++)
+    {
+        float y0 = -1.0f + j * STEP + MARGIN;
+        float y1 = -1.0f + (j + 1) * STEP - MARGIN;
+        for (int i = 0; i < numCells; i++)
+        {
+            float x0 = -1.0f + i * STEP + MARGIN;
+            float x1 = -1.0f + (i + 1) * STEP - MARGIN;
+            addCell(x0, y0, x1, y1, 0.4f, 0.4f, 0.4f);
         }
     }
-    */
 
-
-    //GLfloat vertices[] = {  //matriz de vertices con posicion -1<< x,y <<+1
-        //                 COORDENADAS                /          COLORES
-           // CUADRADO
-              //-0.5f,  -0.5f * float(sqrt(3)) / 2,      0.0f,  0.8f, 0.3f,  0.02f, //esquina izquierda baja
-              //0.5f,  -0.5f * float(sqrt(3)) / 2,      0.0f,  0.8f, 0.3f,  0.02f, //esquina derecha baja
-              //-0.5f,  0.5f * float(sqrt(3)) / 2,      0.0f,  0.8f, 0.3f,  0.02f, //esquina izquierda alta
-              //0.5f,  0.5f * float(sqrt(3)) / 2,      0.0f,  0.8f, 0.3f,  0.02f, //esquina derecha alta
-
-         //TRIANGULO
-           //-0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f, 
-            //0.5f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f,
-            //0.0f,  0.5f * float(sqrt(3)) * 2 / 3, 0.0f,     1.0f, 0.6f,  0.32f,
-           //-0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f,
-            //0.25f, 0.5f * float(sqrt(3)) * 1 / 6, 0.0f,     0.9f, 0.45f, 0.17f,
-            //0.0f, -0.5f * float(sqrt(3)) * 1 / 3, 0.0f,     0.8f, 0.3f,  0.02f
-
-
-    //};
-
-    //GLuint indices[] = {
-         //0, 3, 5, //triangulo izquierdo
-         //3, 2, 4, // triangulo derecho
-         //5, 4, 1 // triangulo superior
-
-
-         //0, 1, 2, //cuadrado
-         //1, 3, 2  //cuadrado
-
-    //};
-
-    Shader shaderProgram("Shaders/default.vert", "Shaders/default.frag");
-
+    Shader shaderProgram("default.vert", "default.frag");
 
     // Genera un objeto de matriz de vértices (VAO) y lo vincula
     VAO VAO1;
     VAO1.Bind();
 
-    // Genera un VBO con el vector dinámico de la grilla
+    // Genera un VBO con los vértices de la grilla
     VBO VBO1(gridVertices.data(), gridVertices.size() * sizeof(GLfloat));
-
-    // Genera un objeto de búfer de vértices y lo vincula a los vértices
-    //VBO VBO1(vertices, sizeof(vertices));
-    // Genera un objeto de búfer de elementos y lo vincula a los índices.
-    //EBO EBO1(indices, sizeof(indices));
 
     // Vincula atributos de VBO, como coordenadas y colores, al VAO.
     VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
     VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    //  Desune todas para evitar modificarlas accidentalmente.
+
+    // Desune todas para evitar modificarlas accidentalmente.
     VAO1.Unbind();
     VBO1.Unbind();
-    //EBO1.Unbind();
 
-
+    // Número de vértices a dibujar (se calcula una sola vez fuera del loop)
+    const GLsizei numVertices = static_cast<GLsizei>(gridVertices.size() / 6);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -145,23 +109,21 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         // le dice al programa de opengl que shader usar
         shaderProgram.Activate();
-        // libera el VAO para wue opengl sepa que debe usarlo
+        // vincula el VAO para que opengl sepa que debe usarlo
         VAO1.Bind();
-        // Dibujar primitivas, número de índices, tipo de datos de los índices, índice de los índices
-        //glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0); //(triangulos)
-        glDrawArrays(GL_LINES, 0, gridVertices.size() / 6);
+        // Dibujar los triángulos de cada celda
+        glDrawArrays(GL_TRIANGLES, 0, numVertices);
         // cambia el back con el front buffer
         glfwSwapBuffers(window);
-        // encargado de los eventos del GLWF
+        // encargado de los eventos del GLFW
         glfwPollEvents();
     }
 
     // elimina todos los objetos creados
     VAO1.Delete();
     VBO1.Delete();
-    //EBO1.Delete();
     shaderProgram.Delete();
-    // Cierre la ventana antes de finalizar el programa.
+    // Cierra la ventana antes de finalizar el programa.
     glfwDestroyWindow(window);
     // Finaliza GLFW antes de terminar el programa.
     glfwTerminate();
