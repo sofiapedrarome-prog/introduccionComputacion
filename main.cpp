@@ -6,7 +6,14 @@
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
-
+// Algoritmo de Bresenham(variante con parámetro de decisión p, para 0 <= dy <= dx)
+//   dx = x1-x0 ; dy = y1-y0
+//   if dx != 0:
+//       y = y0 ; p = 2*dy - dx
+//       for i in range(dx+1):
+//           putPixel(x0+i, y)
+//           if p >= 0: y = y+1 ; p = p - 2*dx
+//           p = p + 2*dy
 int main()
 {
     // Inicializar GLFW
