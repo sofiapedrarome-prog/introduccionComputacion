@@ -40,7 +40,7 @@ GLsizei gVertexCount = 0;
 // Función para renderizar la grilla de píxeles
 void render(GLFWwindow* window) {
     if (!gShader || !gVAO) return;
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClearColor(0.5f, 0.3f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     gShader->Activate();
     gVAO->Bind();
@@ -55,31 +55,23 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 
 }
 
-// BRESENHAM 
+// linea BRESENHAM 
 void drawLineBresenham(int x0, int y0, int x1, int y1, float r, float g, float b) {
-    int dx = abs(x1 - x0);
-    int dy = abs(y1 - y0);
-    int sx = (x0 < x1) ? 1 : -1;
-    int sy = (y0 < y1) ? 1 : -1;
-    int err = dx - dy;
+    int dx = x1 - x0;
+    int dy = y1 - y0;
 
-    while (true) {
-        // Pintar el píxel en la posición actual
-        setPixelColor(x0, y0, r, g, b);
+    if (dx != 0) {
+        int y = y0;
+        int p = 2 * dy - dx;
 
-        // Si llegó al punto final, termina
-        if (x0 == x1 && y0 == y1) break;
+        for (int i = 0; i <= dx; i++) {
+            setPixelColor(x0 + i, y, r, g, b);
 
-        int e2 = 2 * err;
-
-        if (e2 > -dy) {
-            err -= dy;
-            x0 += sx;
-        }
-
-        if (e2 < dx) {
-            err += dx;
-            y0 += sy;
+            if (p >= 0) {
+                y = y + 1;
+                p = p - 2 * dx;
+            }
+            p = p + 2 * dy;
         }
     }
 }
@@ -164,7 +156,7 @@ int main()
     //drawLineBresenham(10, 10, 19, 19, 1.0f, 0.0f, 0.0f);
 
     // dibujar un círculo usando el algoritmo de Bresenham
-    drawCircleBresenham(20, 20, 12, 1.0f, 0.0f, 0.0f);
+    drawCircleBresenham(20, 20, 19, 1.0f, 0.0f, 0.0f);
 
 
 	// generaciom de vertices para la grilla de pixeles
